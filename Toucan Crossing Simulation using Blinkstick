@@ -1,0 +1,106 @@
+#Toucan Crossing Simulation Coursework
+
+import sys
+from time import sleep
+from blinkstick import blinkstick
+
+
+# The following constrants represents Mayfield and westmains road in Edinburgh, each tuple contains
+# the LED index numbers for the red, yellow and green lights. The
+# Tuple "Crossing" has Red and Green lights only.
+Mayfield = (3, 2, 1)
+Westmains = (6, 7, 0)
+Crossing = (4, 5)
+
+# The following constants are used for the LED lamp colours, they
+# are specified in hex as understood by the blinkstick.
+Lamp_Colours = [ '#460000' , '#201000', '#003200' ]
+Text_Colours = [ 'red', 'yellow', 'green' ]
+Lamp_Names = ['Red', 'Yellow', 'Green']
+
+# Traffic light sequence, lamps are red, yellow and green.
+Light_Sequence = [(1, 0, 0), (1, 1, 0), (0, 0, 1), (0, 1, 0)]
+Crossing_Sequence = [(1, 0), (0, 1), (0, 0)]
+
+# The sequence is made with reference with LTN95/2 and following its rules.
+
+Sequence  = [ (0, 2, 0, 10), # red on Mayfield Rd
+             (1, 3, 0, 3),  # Yellow lights
+             (2, 0, 0, 10), # red on Westmains Rd
+             (3, 1, 0, 3),  # Yellow lights
+             (0, 2, 0, 10), # red on Mayfield Rd
+             (1, 3, 0, 3),  # Yellow lights
+             (2, 0, 0, 10), # red on Westmains Rd
+             (3, 0, 0, 3),  # Yellow on Mayfield Rd (Period II)
+             (0, 0, 0, 1),  # everyone stopped (Period III)
+             (0, 0, 1, 7),  # green crossing (Period IV)
+             (0, 0, 2, 3),  # blackout (Period V)
+             (0, 0, 0, 2),  # everyone stopped (Period VIII)
+             (0, 1, 0, 3) ] # Yellow on Westmains Rd (Period IX)
+
+
+def set_traffic_lights(bstick, road, setting):
+        '''In case the lamp is not in the on state, it will be turned off by setting its color to black. This measure ensures that there won't be two lamps turned on unintentionally. The term "lamp" refers to an identifier used to identify a particular LED.'''
+
+    
+    lamps = Light_Sequence[setting]
+
+    # loop over all the lights
+    for lamp in range(0,3):
+        if lamps[lamp] == 1:
+            bstick.set_color(index=road[lamp], hex = Lamp_Colours[lamp])
+        else:
+            bstick.set_color(index=road[lamp], name = 'black')
+
+
+
+def set_crossing_light(bstick, setting):
+    '''The operation of this function is similar to that of set_traffic_lights(), except that there is no repetition as there are only two lamps and their colors are not in sequence in the Lamp_Colours list.'''
+
+    lamps = Crossing_Sequence[setting]
+
+    if lamps[0] == 1:
+        bstick.set_color(index=Crossing[0], hex = Lamp_Colours[0])
+    else:
+        bstick.set_color(index=Crossing[0], name = 'black')
+    if lamps[1] == 1:
+        bs.set_color(index=Crossing[1], hex = Lamp_Colours[2])
+    else:
+        bstick.set_color(index=Crossing[1], hex = 'black')
+
+
+
+# Main programme
+
+#  The first step is to find a blinkstick 
+bs = blinkstick.find_first()
+if bs is None:
+    print("No blinkstick is connected")
+
+# This loops forever, use ctr+C to stop the simulation
+while True:
+    try:
+        # each go round the loop follow the lights sequence
+        for seq in range(0,len(Sequence)):
+                
+                # to represent the traffic lights.  We start with Mayfeild Road. 
+                
+                set_traffic_lights(bs, Mayfield, Sequence[seq][0])
+
+                # Next, set the lights on West Mains Road
+                set_traffic_lights(bs, Westmains, Sequence[seq][1])
+
+                # Finally, set the crossing signal
+                set_crossing_light(bs, Sequence[seq][2])
+ 
+
+    except KeyboardInterrupt:
+            # If the user presses Ctrl+C during the simulation instead of causing a python crash that leaves all currently lit LEDs on,
+            # this exception is raised. We can exit the program and turn off all the LEDs in this situation.
+        
+        
+        if not bs is None:
+            for led in range(0, 8):
+                bs.set_color(index=led,name='black')
+            print("Simulation stopped.")
+            sys.exit()
